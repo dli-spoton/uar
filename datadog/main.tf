@@ -22,7 +22,7 @@ data "http" "users" {
 
 locals {
   response_body = {
-    for k, v in data.http.users : k => jsondecode(v.response_body)
+    for k, v in data.http.users : k => jsondecode(v.response_body) if v.status_code == 200
   }
   user_data = {
     for k, v in local.response_body : k => {
@@ -40,7 +40,7 @@ locals {
   date = formatdate("YYMMDD", timestamp())
   csv_list = concat(
     ["Name, Email, Status, Roles"],
-    [for i in local.user_data : "\"${i.name}\",\"${i.email}\",\"${i.status}\",\"${join(", ", i.roles)}\""],
+    [for i in local.user_data : "\"${try(coalesce(i.name), "")}\",\"${i.email}\",\"${i.status}\",\"${join(", ", i.roles)}\""],
   )
   csv_content = join("\n", local.csv_list)
 }
@@ -48,4 +48,13 @@ locals {
 resource "local_file" "csv" {
   content  = local.csv_content
   filename = "${path.module}/output/dd_infosec_users_${local.date}.csv"
+}
+
+output "failed" {
+  value = {
+    for k, v in data.http.users : k => {
+      status_code      = v.status_code
+      response_headers = v.response_headers
+    } if v.status_code != 200
+  }
 }
