@@ -47,7 +47,7 @@ locals {
 
 resource "local_file" "csv" {
   content  = local.csv_content
-  filename = "${path.module}/output/dd_infosec_users_${local.date}.csv"
+  filename = "${path.module}/output/dd_users_${local.date}.csv"
 }
 
 output "failed" {
